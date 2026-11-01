@@ -19,9 +19,10 @@ use tracing::{Event, Level, Subscriber};
 use tracing_subscriber::field::RecordFields;
 use tracing_subscriber::fmt::format::Writer;
 use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, FormattedFields};
-use tracing_subscriber::registry::{Extensions, LookupSpan, SpanRef};
+use tracing_subscriber::registry::{LookupSpan, SpanRef};
 
 use crate::config::{ColorMode, TimeZone};
+use crate::otel::TraceIds;
 
 /// Whether the console uses colours under `mode`: `auto` colours only a
 /// terminal, and never when `NO_COLOR` is set (<https://no-color.org>).
@@ -37,14 +38,11 @@ pub fn colors(mode: ColorMode) -> bool {
     }
 }
 
-/// Finds the trace id in a span's extensions (when spans are exported).
-pub type TraceIdOf = fn(&Extensions<'_>) -> Option<String>;
-
 /// The event format.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ConsoleFormat {
     time: TimeZone,
-    trace_id: Option<TraceIdOf>,
+    trace_ids: Option<TraceIds>,
 }
 
 impl ConsoleFormat {
@@ -53,15 +51,14 @@ impl ConsoleFormat {
     pub const fn new(time: TimeZone) -> Self {
         Self {
             time,
-            trace_id: None,
+            trace_ids: None,
         }
     }
 
-    /// Print the short trace id `trace_id` finds in the innermost span's
-    /// extensions (`init` sets this up when exporting).
+    /// Print the short trace id of the span an event happened in.
     #[must_use]
-    pub const fn with_trace_id(mut self, trace_id: TraceIdOf) -> Self {
-        self.trace_id = Some(trace_id);
+    pub(crate) fn with_trace_ids(mut self, trace_ids: TraceIds) -> Self {
+        self.trace_ids = Some(trace_ids);
         self
     }
 }
@@ -228,8 +225,8 @@ where
                     write!(writer, "{stored}")?;
                 }
             }
-            if let (Some(find), Some(innermost)) = (self.trace_id, spans.last()) {
-                trace = find(&innermost.extensions());
+            if let (Some(ids), Some(innermost)) = (&self.trace_ids, spans.last()) {
+                trace = ids.of(&innermost.id());
             }
         }
         if let Some(id) = trace {
@@ -246,43 +243,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
-    use tracing_subscriber::fmt::MakeWriter;
     use tracing_subscriber::layer::SubscriberExt as _;
 
     use super::*;
-
-    #[derive(Clone, Default)]
-    struct Captured(Arc<Mutex<Vec<u8>>>);
-
-    impl std::io::Write for Captured {
-        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.0
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .extend_from_slice(buf);
-            Ok(buf.len())
-        }
-
-        fn flush(&mut self) -> std::io::Result<()> {
-            Ok(())
-        }
-    }
-
-    impl<'a> MakeWriter<'a> for Captured {
-        type Writer = Self;
-
-        fn make_writer(&'a self) -> Self::Writer {
-            self.clone()
-        }
-    }
-
-    impl Captured {
-        fn text(&self) -> String {
-            String::from_utf8(self.0.lock().unwrap().clone()).unwrap()
-        }
-    }
+    use crate::testing::Captured;
 
     /// The lines `f` logs, at `time`, with or without colours.
     fn lines(time: TimeZone, ansi: bool, f: impl FnOnce()) -> Vec<String> {

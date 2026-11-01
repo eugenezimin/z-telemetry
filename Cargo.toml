@@ -9,17 +9,35 @@ readme = "README.md"
 keywords = ["tracing", "logging", "opentelemetry", "otlp", "microservices"]
 categories = ["development-tools::debugging"]
 
+[features]
+default = ["otlp-grpc", "otlp-http"]
+# OTLP over gRPC (tonic; the Collector's port 4317). Needs a tokio runtime when `init` runs.
+otlp-grpc = ["opentelemetry-otlp/grpc-tonic", "dep:tokio"]
+# OTLP over HTTP with protobuf bodies (the Collector's port 4318).
+otlp-http = ["opentelemetry-otlp/http-proto", "opentelemetry-otlp/reqwest-blocking-client"]
+
 [dependencies]
 # Local time without the `time` crate's refusal of the local offset in multi-threaded processes.
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 humantime-serde = "1"
 serde = { version = "1", features = ["derive"] }
 nu-ansi-term = "0.50"
+opentelemetry = { version = "0.33", default-features = false, features = ["trace", "logs"] }
+opentelemetry-appender-tracing = { version = "0.33", default-features = false }
+# Exports run on the SDK's own threads (batch processors); exporters are built inside the host's runtime.
+opentelemetry-otlp = { version = "0.33", default-features = false, features = ["trace", "logs"] }
+opentelemetry_sdk = { version = "0.33", default-features = false, features = ["trace", "logs"] }
 thiserror = "2"
+tokio = { version = "1.47", default-features = false, features = ["rt"], optional = true }
 tracing = { version = "0.1", default-features = false, features = ["std"] }
-tracing-subscriber = { version = "0.3", default-features = false, features = ["ansi", "env-filter", "fmt", "registry", "std"] }
+# A non-blocking stdout: a slow terminal or pipe never stalls the host's async workers.
+tracing-appender = "0.2"
+tracing-opentelemetry = { version = "0.34", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["ansi", "env-filter", "fmt", "registry", "std", "tracing-log"] }
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
+opentelemetry_sdk = { version = "0.33", default-features = false, features = ["trace", "logs", "testing"] }
 serde-saphyr = { version = "2", default-features = false, features = ["deserialize"] }
 
 [lints.rust]
