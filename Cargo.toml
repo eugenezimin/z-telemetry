@@ -10,11 +10,14 @@ keywords = ["tracing", "logging", "opentelemetry", "otlp", "microservices"]
 categories = ["development-tools::debugging"]
 
 [dependencies]
+# Local time without the `time` crate's refusal of the local offset in multi-threaded processes.
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 humantime-serde = "1"
 serde = { version = "1", features = ["derive"] }
+nu-ansi-term = "0.50"
 thiserror = "2"
-# Filters ("info,addresses=debug") are validated with the same parser the console uses.
-tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "std"] }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["ansi", "env-filter", "fmt", "registry", "std"] }
 
 [dev-dependencies]
 serde-saphyr = { version = "2", default-features = false, features = ["deserialize"] }

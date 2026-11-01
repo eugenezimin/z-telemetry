@@ -8,6 +8,7 @@
 //!   headers, and through event headers.
 
 pub mod config;
+pub mod console;
 
 pub use config::{
     ColorMode, ConfigError, ConsoleConfig, OtlpConfig, Protocol, TelemetryConfig, TimeZone,
