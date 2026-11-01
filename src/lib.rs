@@ -6,3 +6,9 @@
 //!   logs over OTLP, to a Collector (Grafana's stack, or any other);
 //! - **propagation**: W3C trace context in and out of HTTP and gRPC
 //!   headers, and through event headers.
+
+pub mod config;
+
+pub use config::{
+    ColorMode, ConfigError, ConsoleConfig, OtlpConfig, Protocol, TelemetryConfig, TimeZone,
+};
