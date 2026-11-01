@@ -21,6 +21,7 @@
 pub mod config;
 pub mod console;
 mod otel;
+pub mod propagation;
 #[cfg(test)]
 mod testing;
 
@@ -357,5 +358,50 @@ mod tests {
             init(&config, Service::new("x", "0")),
             Err(Error::NoRuntime)
         ));
+    }
+
+    #[test]
+    fn traces_continue_from_headers_and_events() {
+        opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
+        let caller = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+        let mut headers = http::HeaderMap::new();
+        headers.insert("traceparent", caller.parse().unwrap());
+        let mut onward = http::HeaderMap::new();
+        let mut from_event = None;
+        let run = exporting("info", 1.0, || {
+            let span = tracing::info_span!("http");
+            propagation::set_parent(&span, &headers);
+            let _entered = span.enter();
+            propagation::inject(&span, &mut onward);
+            let job = tracing::info_span!(parent: None, "event");
+            propagation::set_parent_from(&job, caller);
+            from_event = propagation::traceparent(&job);
+        });
+        let spans = run.spans.get_finished_spans().unwrap();
+        let caller_trace = "4bf92f3577b34da6a3ce929d0e0e4736";
+        assert_eq!(spans.len(), 2);
+        for span in &spans {
+            assert_eq!(span.span_context.trace_id().to_string(), caller_trace);
+            assert_eq!(span.parent_span_id.to_string(), "00f067aa0ba902b7");
+            assert!(span.parent_span_is_remote);
+        }
+        let sent = onward["traceparent"].to_str().unwrap();
+        assert!(sent.starts_with(&format!("00-{caller_trace}-")), "{sent}");
+        assert!(from_event.unwrap().contains(caller_trace));
+    }
+
+    #[test]
+    fn without_a_traceparent_a_span_starts_its_own_trace() {
+        opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
+        let mut own = None;
+        let run = exporting("info", 1.0, || {
+            let span = tracing::info_span!("http");
+            propagation::set_parent(&span, &http::HeaderMap::new());
+            own = propagation::traceparent(&span);
+        });
+        let spans = run.spans.get_finished_spans().unwrap();
+        let trace = spans[0].span_context.trace_id().to_string();
+        assert!(own.unwrap().contains(&trace));
+        assert!(!spans[0].parent_span_is_remote);
     }
 }

@@ -19,6 +19,8 @@ otlp-http = ["opentelemetry-otlp/http-proto", "opentelemetry-otlp/reqwest-blocki
 [dependencies]
 # Local time without the `time` crate's refusal of the local offset in multi-threaded processes.
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+# Header maps of HTTP and gRPC requests, for trace propagation.
+http = "1"
 humantime-serde = "1"
 serde = { version = "1", features = ["derive"] }
 nu-ansi-term = "0.50"
