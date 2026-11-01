@@ -39,6 +39,15 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["a
 uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
+# OTLP receivers for the integration tests: gRPC (tonic) and HTTP (hyper), decoding the payloads.
+http-body-util = "0.1"
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["http1", "server", "tokio"] }
+opentelemetry-proto = { version = "0.33", default-features = false, features = ["gen-tonic", "trace", "logs"] }
+prost = "0.14"
+tokio = { version = "1.47", features = ["macros", "net", "rt-multi-thread", "sync"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+tonic = { version = "0.14", default-features = false, features = ["router", "server", "transport"] }
 opentelemetry_sdk = { version = "0.33", default-features = false, features = ["trace", "logs", "testing"] }
 serde-saphyr = { version = "2", default-features = false, features = ["deserialize"] }
 
