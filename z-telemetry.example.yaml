@@ -1,0 +1,22 @@
+# z-telemetry: every setting with its default. A service embeds this block
+# in its own configuration (e.g. under operations.telemetry).
+
+console:
+  level: info                 # what is printed: a tracing filter, e.g. "info,my_service=debug";
+                              #   levels trace, debug, info, warn, error, per module.
+                              #   The RUST_LOG environment variable wins over it.
+  color: auto                 # auto: colours only on a terminal, never when NO_COLOR is set;
+                              #   always | never
+  time: local                 # local | utc (both with milliseconds)
+
+# OpenTelemetry export; absent, nothing is exported.
+# otlp:
+#   endpoint: http://127.0.0.1:4317   # the Collector: :4317 for grpc, :4318 for http
+#                                     #   (http adds /v1/traces and /v1/logs). http:// only.
+#   protocol: grpc                    # grpc | http (protobuf)
+#   level: info                       # events exported as logs (a tracing filter)
+#   sample_ratio: 1.0                 # share of new traces recorded, 0.0 to 1.0;
+#                                     #   continued traces follow their caller's decision
+#   timeout: 10s                      # longest export request
+
+environment: development      # deployment.environment.name on everything exported
