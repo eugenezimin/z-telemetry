@@ -10,7 +10,7 @@ Telemetry for services, from the `tracing` events they already emit:
 - **Trace propagation**: W3C `traceparent` in and out of HTTP and gRPC headers, and through event
   headers, so one request is one trace across services.
 
-> **Status: 0.1.0.** Console, OTLP export (gRPC and HTTP), propagation.
+> **Status: 0.2.0.** Console, OTLP export (gRPC and HTTP), propagation.
 
 ## Usage
 

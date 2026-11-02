@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0]
+
 ### Changed
 - The console line: `[time][LEVEL][module::path:line] message  META::[ fields]`. The message takes
   the level's colour; the event's fields, its spans' fields and the trace id are grouped in
