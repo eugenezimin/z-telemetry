@@ -3,7 +3,8 @@
 Telemetry for services, from the `tracing` events they already emit:
 
 - **Console logs** people can read: one coloured line per event on stdout with local (or UTC)
-  time, level, `module:line`, the message and its data, and the trace id when exporting.
+  time, level and `module:line` in brackets, the message in the level's colour, then its data and
+  the trace id when exporting in `META::[…]`.
 - **OpenTelemetry**: the same spans and events exported as traces and logs over OTLP (gRPC or
   HTTP) to a Collector, for Grafana's stack (Loki, Tempo) or any other backend.
 - **Trace propagation**: W3C `traceparent` in and out of HTTP and gRPC headers, and through event
@@ -29,7 +30,7 @@ telemetry.shutdown();
 A line on the console:
 
 ```text
-2026-11-01 16:49:58.025  INFO users_service::serve:412  serving  http=0.0.0.0:8080  trace=4bf92f35
+[2026-11-01 16:49:58.025][INFO][users_service::serve:412] serving  META::[ http=0.0.0.0:8080 trace=4bf92f35]
 ```
 
 Try it: `cargo run --example console`.
