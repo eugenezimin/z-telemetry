@@ -1,7 +1,8 @@
 //! Telemetry for services, from the `tracing` events they already emit:
 //!
-//! - **console**: one readable, coloured line per event on stdout: local (or
-//!   UTC) time, level, `module:line`, the message and its data;
+//! - **console**: one readable, coloured line per event on stdout:
+//!   `[time][LEVEL][module:line] message  META::[ data]`, the message in the
+//!   level's colour;
 //! - **OpenTelemetry**: the same spans and events exported as traces and
 //!   logs over OTLP, to a Collector (Grafana's stack, or any other);
 //! - **propagation**: W3C trace context in and out of HTTP and gRPC

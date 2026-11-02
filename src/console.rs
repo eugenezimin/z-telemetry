@@ -1,14 +1,16 @@
 //! The console format: one readable line per event.
 //!
 //! ```text
-//! 2026-11-01 16:49:58.025  INFO my_service::serve:412  serving  http=0.0.0.0:8080 request_id=7f3c… trace=4bf92f35
+//! [2026-11-01 16:49:58.025][INFO][my_service::serve:412] serving  META::[ http=0.0.0.0:8080 request_id=7f3c… trace=4bf92f35]
 //! ```
 //!
-//! Time (local or UTC, milliseconds), the level (padded, coloured), the
-//! event's `module::path:line`, the message, then the event's own fields,
-//! then the fields of the spans it happened in (outermost first), then the
-//! short trace id when spans are exported. Field names are dimmed; values
-//! are quoted when they contain spaces, so a line splits unambiguously.
+//! In brackets: the time (local or UTC, milliseconds), the level and the
+//! event's `module::path:line`. Then the message, in the level's colour.
+//! Then, in `META::[…]`, the event's own fields, the fields of the spans it
+//! happened in (outermost first) and the short trace id when spans are
+//! exported; a line without any has no `META`. Field names are dimmed;
+//! values are quoted when they contain spaces, so a line splits
+//! unambiguously.
 
 use std::fmt::{self, Write as _};
 use std::io::IsTerminal as _;
@@ -197,32 +199,27 @@ where
         event.record(&mut visitor);
         let message = visitor.message.unwrap_or_default();
 
+        let style = level_style(level);
+        let dim = Style::new().dimmed();
         write!(
             writer,
-            "{} {} {}  {}",
-            paint(ansi, Style::new().dimmed(), &time),
-            paint(ansi, level_style(level), &format!("{:>5}", level.as_str())),
-            paint(ansi, Style::new().dimmed(), &place),
-            message
+            "{}{}{} {}",
+            paint(ansi, dim, &format!("[{time}]")),
+            paint(ansi, style, &format!("[{}]", level.as_str())),
+            paint(ansi, dim, &format!("[{place}]")),
+            paint(ansi, style, &message)
         )?;
-        if !fields.is_empty() {
-            write!(writer, " {fields}")?;
-        }
-        // The spans the event happened in, outermost first.
+
+        // META: the event's fields, then the spans' (outermost first), then
+        // the trace id; every piece starts with a space.
+        let mut meta = fields;
         let mut trace = None;
         if let Some(scope) = ctx.event_scope() {
             let spans: Vec<SpanRef<'_, S>> = scope.from_root().collect();
-            let mut first = true;
             for span in &spans {
                 let ext = span.extensions();
-                if let Some(stored) = ext.get::<FormattedFields<N>>()
-                    && !stored.is_empty()
-                {
-                    if first {
-                        writer.write_char(' ')?;
-                        first = false;
-                    }
-                    write!(writer, "{stored}")?;
+                if let Some(stored) = ext.get::<FormattedFields<N>>() {
+                    meta.push_str(stored);
                 }
             }
             if let (Some(ids), Some(innermost)) = (&self.trace_ids, spans.last()) {
@@ -230,11 +227,19 @@ where
             }
         }
         if let Some(id) = trace {
+            let _ = write!(
+                meta,
+                " {}{}",
+                paint(ansi, dim, "trace="),
+                id.get(..8).unwrap_or(&id)
+            );
+        }
+        if !meta.is_empty() {
             write!(
                 writer,
-                "  {}{}",
-                paint(ansi, Style::new().dimmed(), "trace="),
-                id.get(..8).unwrap_or(&id)
+                "  {}{meta}{}",
+                paint(ansi, dim, "META::["),
+                paint(ansi, dim, "]")
             )?;
         }
         writeln!(writer)
@@ -270,15 +275,16 @@ mod tests {
         let [line] = line.as_slice() else {
             panic!("{line:?}")
         };
-        // 2026-11-01 16:49:58.025Z  INFO z_telemetry::console::tests:NNN  serving  port=8080 host=0.0.0.0
-        let (time, rest) = line.split_once("Z ").unwrap();
-        assert_eq!(time.len(), "2026-11-01 16:49:58.025".len(), "{line}");
+        // [2026-11-01 16:49:58.025Z][INFO][z_telemetry::console::tests:NNN] serving  META::[ port=8080 host=0.0.0.0]
+        let (time, rest) = line.split_once("Z]").unwrap();
+        assert_eq!(time, format!("[{}", &time[1..]), "{line}");
+        assert_eq!(time.len(), "[2026-11-01 16:49:58.025".len(), "{line}");
         assert!(
-            rest.starts_with(" INFO z_telemetry::console::tests:"),
+            rest.starts_with("[INFO][z_telemetry::console::tests:"),
             "{line}"
         );
         assert!(
-            rest.ends_with("  serving  port=8080 host=0.0.0.0"),
+            rest.ends_with("] serving  META::[ port=8080 host=0.0.0.0]"),
             "{line}"
         );
     }
@@ -288,13 +294,18 @@ mod tests {
         let line = lines(TimeZone::Local, false, || tracing::warn!("careful"));
         let time: String = line[0]
             .chars()
+            .skip(1)
             .take("2026-11-01 16:49:58.025".len())
             .collect();
         assert!(
             chrono::NaiveDateTime::parse_from_str(&time, "%Y-%m-%d %H:%M:%S%.3f").is_ok(),
             "{time}"
         );
-        assert!(line[0].contains(" WARN "));
+        assert!(line[0].contains("][WARN]["), "{}", line[0]);
+        assert!(
+            line[0].ends_with("] careful"),
+            "a line without data has no META"
+        );
     }
 
     #[test]
@@ -308,11 +319,11 @@ mod tests {
             );
         });
         assert!(
-            line[0].ends_with(r#"write failed  error="disk full" path="a b""#),
+            line[0].ends_with(r#"write failed  META::[ error="disk full" path="a b"]"#),
             "{}",
             line[0]
         );
-        assert!(line[0].contains("ERROR"));
+        assert!(line[0].contains("[ERROR]"));
     }
 
     #[test]
@@ -325,7 +336,7 @@ mod tests {
             tracing::debug!(step = "merge", "working");
         });
         assert!(
-            line[0].ends_with("  working  step=merge  request_id=r1 run=7"),
+            line[0].ends_with(" working  META::[ step=merge request_id=r1 run=7]"),
             "{}",
             line[0]
         );
@@ -337,7 +348,13 @@ mod tests {
         assert!(!plain[0].contains('\u{1b}'));
         let coloured = lines(TimeZone::Utc, true, || tracing::error!(k = 1, "boom"));
         assert!(
-            coloured[0].contains("\u{1b}[1;31mERROR"),
+            coloured[0].contains("\u{1b}[1;31m[ERROR]\u{1b}[0m"),
+            "{:?}",
+            coloured[0]
+        );
+        // The message takes the level's colour.
+        assert!(
+            coloured[0].contains(" \u{1b}[1;31mboom\u{1b}[0m"),
             "{:?}",
             coloured[0]
         );

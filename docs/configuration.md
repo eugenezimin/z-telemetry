@@ -18,18 +18,17 @@ The complete example is [`z-telemetry.example.yaml`](../z-telemetry.example.yaml
 One line per event:
 
 ```text
-2026-11-01 16:49:58.025  INFO my_service::orders:88  order placed  order=42 total="99.90 EUR"  method=POST path=/orders request_id=7f3c2a  trace=4bf92f35
+[2026-11-01 16:49:58.025][INFO][my_service::orders:88] order placed  META::[ order=42 total="99.90 EUR" method=POST path=/orders request_id=7f3c2a trace=4bf92f35]
 ```
 
-- the time;
-- the level, coloured: TRACE grey, DEBUG blue, INFO green, WARN yellow, ERROR bold red;
-- the event's `module::path:line`;
-- the message;
-- the event's own fields;
-- the fields of the spans it happened in, outermost first;
-- when exporting, the first 8 hex digits of the trace id.
+- in brackets, the time, the level and the event's `module::path:line`;
+- the message, in the level's colour: TRACE grey, DEBUG blue, INFO green, WARN yellow, ERROR bold
+  red (the level takes the same colour);
+- in `META::[…]`, the event's own fields, then the fields of the spans it happened in (outermost
+  first), then, when exporting, the first 8 hex digits of the trace id. A line without any of
+  them has no `META`.
 
-Field names are dimmed. Values are quoted when they contain spaces, quotes or `=`.
+The time, the place, `META` and field names are dimmed. Values are quoted when they contain spaces, quotes or `=`.
 
 Output goes through a non-blocking writer, so a slow terminal or pipe never stalls async workers.
 `Telemetry::shutdown` flushes it.
