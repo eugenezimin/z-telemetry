@@ -30,7 +30,7 @@ opentelemetry-appender-tracing = { version = "0.33", default-features = false }
 opentelemetry-otlp = { version = "0.33", default-features = false, features = ["trace", "logs"] }
 opentelemetry_sdk = { version = "0.33", default-features = false, features = ["trace", "logs"] }
 thiserror = "2"
-tokio = { version = "1.47", default-features = false, features = ["rt"], optional = true }
+tokio = { version = "1.54", default-features = false, features = ["rt"], optional = true }
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 # A non-blocking stdout: a slow terminal or pipe never stalls the host's async workers.
 tracing-appender = "0.2"
@@ -45,7 +45,7 @@ hyper = { version = "1", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["http1", "server", "tokio"] }
 opentelemetry-proto = { version = "0.33", default-features = false, features = ["gen-tonic", "trace", "logs"] }
 prost = "0.14"
-tokio = { version = "1.47", features = ["macros", "net", "rt-multi-thread", "sync"] }
+tokio = { version = "1.54", features = ["macros", "net", "rt-multi-thread", "sync"] }
 tokio-stream = { version = "0.1", features = ["net"] }
 tonic = { version = "0.14", default-features = false, features = ["router", "server", "transport"] }
 opentelemetry_sdk = { version = "0.33", default-features = false, features = ["trace", "logs", "testing"] }
