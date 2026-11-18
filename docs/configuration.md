@@ -43,7 +43,9 @@ Absent, nothing is exported.
 | `protocol` | `grpc` | `grpc` (feature `otlp-grpc`; `init` must run inside a tokio runtime) or `http` (protobuf, feature `otlp-http`). |
 | `level` | `info` | Which events are exported as logs, a `tracing` filter. |
 | `sample_ratio` | `1.0` | The share of new traces recorded, `0.0`–`1.0`. A trace continued from a caller follows the caller's decision (parent-based sampling). |
-| `timeout` | `10s` | Longest export request. |
+| `timeout` | `10s` | Longest export request, as a duration such as `500ms`, `10s` or `1m` (see below). |
+
+Durations are one or more parts, each a whole number and a unit, with optional spaces between them: `500ms`, `10s`, `1m 30s` or `7days`. The units are `ns`, `us`, `ms`, `s`, `m`, `h`, `d` (24 hours) and `w`, and their long forms such as `seconds` or `days` work too. Months, years, fractions and signs are refused. The parser is `z_telemetry::duration`, which a service can copy for its own settings.
 
 What is exported:
 - **spans** as traces, at the console's level;
