@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.2.1]
+
+### Changed
+- The tokio floor is 1.54, for both the optional runtime dependency and the tests, matching the
+  services and the other platform libraries.
+
+### Security
+- cargo-deny ignores RUSTSEC-2026-0543 (chrono) and RUSTSEC-2026-0542 (humantime), which mark
+  both crates as unmaintained with no patched release and no known vulnerability. Replacing them
+  is planned separately.
+
 ## [0.2.0]
 
 ### Changed
