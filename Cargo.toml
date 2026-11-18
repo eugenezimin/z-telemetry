@@ -21,7 +21,6 @@ otlp-http = ["opentelemetry-otlp/http-proto", "opentelemetry-otlp/reqwest-blocki
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # Header maps of HTTP and gRPC requests, for trace propagation.
 http = "1"
-humantime-serde = "1"
 serde = { version = "1", features = ["derive"] }
 nu-ansi-term = "0.50"
 opentelemetry = { version = "0.33", default-features = false, features = ["trace", "logs"] }

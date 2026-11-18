@@ -21,6 +21,7 @@
 
 pub mod config;
 pub mod console;
+pub mod duration;
 mod otel;
 pub mod propagation;
 #[cfg(test)]
