@@ -176,11 +176,13 @@ where
         let ansi = writer.has_ansi_escapes();
         let meta = event.metadata();
         let time = match self.time {
-            TimeZone::Local => chrono::Local::now()
-                .format("%Y-%m-%d %H:%M:%S%.3f")
+            // The system time zone, read from the tz database, so the offset
+            // follows daylight-saving changes in a long-running process.
+            TimeZone::Local => jiff::ZonedDateTime::now()
+                .strftime("%Y-%m-%d %H:%M:%S%.3f")
                 .to_string(),
-            TimeZone::Utc => chrono::Utc::now()
-                .format("%Y-%m-%d %H:%M:%S%.3fZ")
+            TimeZone::Utc => jiff::Timestamp::now()
+                .strftime("%Y-%m-%d %H:%M:%S%.3fZ")
                 .to_string(),
         };
         let level = *meta.level();
@@ -298,7 +300,7 @@ mod tests {
             .take("2026-11-01 16:49:58.025".len())
             .collect();
         assert!(
-            chrono::NaiveDateTime::parse_from_str(&time, "%Y-%m-%d %H:%M:%S%.3f").is_ok(),
+            jiff::civil::DateTime::strptime("%Y-%m-%d %H:%M:%S%.f", &time).is_ok(),
             "{time}"
         );
         assert!(line[0].contains("][WARN]["), "{}", line[0]);

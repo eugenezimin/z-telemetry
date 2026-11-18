@@ -113,7 +113,7 @@ pub struct OtlpConfig {
     #[serde(default = "OtlpConfig::default_sample_ratio")]
     pub sample_ratio: f64,
     /// Longest export request.
-    #[serde(with = "humantime_serde", default = "OtlpConfig::default_timeout")]
+    #[serde(with = "crate::duration", default = "OtlpConfig::default_timeout")]
     pub timeout: Duration,
 }
 
