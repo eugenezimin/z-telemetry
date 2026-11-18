@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Changed
+- Durations in the configuration, `otlp.timeout` today, are read by `z_telemetry::duration` instead
+  of humantime-serde. `500ms`, `10s`, `1m 30s` and `7days` read as before; months, years,
+  fractions and signs are now refused. The module is public, so a service can use the same
+  grammar for its own settings.
+- The console clock comes from jiff instead of chrono. Local time is read from the tz database
+  and follows daylight-saving changes; the line keeps its format.
+
+### Removed
+- The chrono and humantime-serde dependencies, and with them the cargo-deny exceptions for
+  RUSTSEC-2026-0543 and RUSTSEC-2026-0542.
+
 ## [0.2.1]
 
 ### Changed
