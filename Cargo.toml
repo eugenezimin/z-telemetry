@@ -17,10 +17,11 @@ otlp-grpc = ["opentelemetry-otlp/grpc-tonic", "dep:tokio"]
 otlp-http = ["opentelemetry-otlp/http-proto", "opentelemetry-otlp/reqwest-blocking-client"]
 
 [dependencies]
-# Local time without the `time` crate's refusal of the local offset in multi-threaded processes.
-chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # Header maps of HTTP and gRPC requests, for trace propagation.
 http = "1"
+# The console clock: local time from the tz database, which `time` cannot read in a multi-threaded
+# process, following daylight-saving changes.
+jiff = "1"
 serde = { version = "1", features = ["derive"] }
 nu-ansi-term = "0.50"
 opentelemetry = { version = "0.33", default-features = false, features = ["trace", "logs"] }
